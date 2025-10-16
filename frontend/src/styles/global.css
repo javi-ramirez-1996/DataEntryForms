@@ -1,0 +1,160 @@
+:root {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #f6f7fb;
+  color: #1f2937;
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.sidebar {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.sidebar h2 {
+  margin-top: 0;
+}
+
+.form-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.form-list li {
+  margin-bottom: 0.5rem;
+}
+
+.form-list button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+}
+
+.form-list button.active,
+.form-list button:hover {
+  border-color: #2563eb;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.15);
+}
+
+.main-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.08);
+}
+
+.progress-bar {
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin: 0.5rem 0 1rem;
+}
+
+.progress-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+}
+
+.badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.field label {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.field input,
+.field textarea,
+.field select {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  padding: 0.6rem 0.75rem;
+  font-size: 1rem;
+}
+
+.assignment-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.assignment-card h4 {
+  margin: 0 0 0.5rem;
+}
+
+.assignment-card footer {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #eef2ff;
+  color: #1d4ed8;
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-complete {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-progress {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-not-started {
+  background: #f3f4f6;
+  color: #374151;
+}
