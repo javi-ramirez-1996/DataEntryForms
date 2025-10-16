@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Form Reporting Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="reports.js" defer></script>
+</head>
+<body>
+    <header class="app-header">
+        <h1>Form Reporting Dashboard</h1>
+    </header>
+    <main class="container">
+        <section class="controls">
+            <label for="formId">Form ID</label>
+            <input type="number" id="formId" min="1" placeholder="Enter form ID" />
+            <label for="role">Viewer Role</label>
+            <select id="role">
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+                <option value="analyst">Analyst</option>
+            </select>
+            <button id="loadReport">Load Report</button>
+            <button id="exportCsv" disabled>Export CSV</button>
+            <button id="exportPdf" disabled>Export PDF</button>
+        </section>
+
+        <section class="summary">
+            <h2>Completion Overview</h2>
+            <div class="summary-grid">
+                <div>
+                    <span class="summary-label">Total Responses</span>
+                    <span id="totalResponses" class="summary-value">-</span>
+                </div>
+                <div>
+                    <span class="summary-label">Completed Responses</span>
+                    <span id="completedResponses" class="summary-value">-</span>
+                </div>
+                <div>
+                    <span class="summary-label">Completion Rate</span>
+                    <span id="completionRate" class="summary-value">-</span>
+                </div>
+            </div>
+            <canvas id="completionChart" height="120"></canvas>
+        </section>
+
+        <section class="field-details">
+            <h2>Field Statistics</h2>
+            <table id="fieldsTable">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Answered</th>
+                        <th>Response Rate</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+
+    <template id="fieldRowTemplate">
+        <tr>
+            <td class="field-name"></td>
+            <td class="field-type"></td>
+            <td class="field-answered"></td>
+            <td class="field-rate"></td>
+            <td class="field-details"></td>
+        </tr>
+    </template>
+
+    <div id="notification" role="status" aria-live="polite"></div>
+</body>
+</html>
