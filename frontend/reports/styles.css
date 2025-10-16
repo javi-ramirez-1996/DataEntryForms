@@ -1,0 +1,131 @@
+:root {
+    color-scheme: light dark;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --primary: #2563eb;
+    --bg: #f5f7fb;
+    --card-bg: #ffffff;
+    --border: #dce0e8;
+    --text: #1f2937;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.app-header {
+    background: var(--primary);
+    color: #fff;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1rem 3rem;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+    margin-bottom: 2rem;
+}
+
+.controls label {
+    font-weight: 600;
+}
+
+.controls input,
+.controls select,
+.controls button {
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 1rem;
+}
+
+.controls button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.controls button[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.controls button:not([disabled]):hover {
+    transform: translateY(-2px);
+}
+
+.summary,
+.field-details {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+    margin-bottom: 2rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.summary-label {
+    display: block;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.summary-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+#fieldsTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#fieldsTable th,
+#fieldsTable td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+#fieldsTable tbody tr:hover {
+    background: rgba(37, 99, 235, 0.08);
+}
+
+#notification {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background: var(--primary);
+    color: #fff;
+    padding: 0.75rem 1.2rem;
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgba(37, 99, 235, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+#notification.show {
+    opacity: 1;
+}

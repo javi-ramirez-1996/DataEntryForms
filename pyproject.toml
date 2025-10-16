@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data-entry-forms"
+version = "0.1.0"
+description = "Reporting service for DataEntryForms"
+readme = "README.md"
+authors = [{name = "DataEntry Team"}]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "sqlalchemy>=2.0",
+    "pydantic>=2.0",
+    "python-multipart",
+    "apscheduler",
+    "fpdf2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+]

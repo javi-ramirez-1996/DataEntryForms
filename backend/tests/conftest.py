@@ -1,62 +1,95 @@
 from __future__ import annotations
 
-from collections.abc import Generator
-from pathlib import Path
-from typing import Dict
-
 import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
-import sys
-
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from backend import main as main_module  # noqa: E402
-from backend.database import Database, get_db  # noqa: E402
-
-
-@pytest.fixture(autouse=True)
-def reset_database() -> Generator[Database, None, None]:
-    db = Database()
-    original_db = get_db.__globals__["_db_instance"]
-    get_db.__globals__["_db_instance"] = db
-    main_module.app = main_module.create_app()
-    yield db
-    get_db.__globals__["_db_instance"] = original_db
-    main_module.app = main_module.create_app()
+from backend.app.database import Base, get_db
+from backend.app.main import app
+from backend.app.models import FieldType, Form, FormField, FormResponse, ResponseFieldValue, ResponseStatus
 
 
 @pytest.fixture()
-def client() -> Generator:
-    class Client:
-        def request(self, method: str, path: str, json: dict | None = None, headers: Dict[str, str] | None = None):
-            return main_module.app.handle(method, path, body=json, headers=headers)
-
-        def post(self, path: str, json: dict | None = None, headers: Dict[str, str] | None = None):
-            return self.request("POST", path, json=json, headers=headers)
-
-        def get(self, path: str, headers: Dict[str, str] | None = None):
-            return self.request("GET", path, headers=headers)
-
-        def patch(self, path: str, json: dict | None = None, headers: Dict[str, str] | None = None):
-            return self.request("PATCH", path, json=json, headers=headers)
-
-    yield Client()
+def engine():
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    yield engine
+    Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture()
-def seed_users(reset_database: Database) -> Dict[str, int]:
-    creator = reset_database.add_user("creator@example.com", "Creator")
-    assignee = reset_database.add_user("assignee@example.com", "Assignee")
-    observer = reset_database.add_user("observer@example.com", "Observer")
-    admin = reset_database.add_user("admin@example.com", "Admin", is_admin=True)
-    return {"creator": creator.id, "assignee": assignee.id, "observer": observer.id, "admin": admin.id}
+def db_session(engine) -> Session:
+    TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    session = TestingSessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
 
 
 @pytest.fixture()
-def seed_form_response(reset_database: Database, seed_users: Dict[str, int]):
-    form = reset_database.add_form_response(101, {"field": "value"}, seed_users["creator"])
-    form.assigned_user_id = seed_users["assignee"]
-    reset_database.update_form_response(form)
-    return form
+def seeded_data(db_session: Session):
+    form = Form(name="Site Inspection")
+    db_session.add(form)
+    db_session.flush()
+
+    number_field = FormField(form_id=form.id, name="Hazards Found", field_type=FieldType.number)
+    choice_field = FormField(form_id=form.id, name="Site Status", field_type=FieldType.choice)
+    text_field = FormField(form_id=form.id, name="Notes", field_type=FieldType.text)
+
+    db_session.add_all([number_field, choice_field, text_field])
+    db_session.flush()
+
+    response_a = FormResponse(
+        form_id=form.id,
+        status=ResponseStatus.completed,
+        is_completed=True,
+    )
+    response_b = FormResponse(
+        form_id=form.id,
+        status=ResponseStatus.completed,
+        is_completed=True,
+    )
+    response_c = FormResponse(
+        form_id=form.id,
+        status=ResponseStatus.submitted,
+        is_completed=False,
+    )
+
+    db_session.add_all([response_a, response_b, response_c])
+    db_session.flush()
+
+    db_session.add_all(
+        [
+            ResponseFieldValue(response_id=response_a.id, field_id=number_field.id, value="5"),
+            ResponseFieldValue(response_id=response_b.id, field_id=number_field.id, value="7"),
+            ResponseFieldValue(response_id=response_a.id, field_id=choice_field.id, value="Open"),
+            ResponseFieldValue(response_id=response_b.id, field_id=choice_field.id, value="Closed"),
+            ResponseFieldValue(response_id=response_b.id, field_id=text_field.id, value="All issues resolved"),
+        ]
+    )
+    db_session.commit()
+
+    return {
+        "form": form,
+        "fields": {
+            "number": number_field,
+            "choice": choice_field,
+            "text": text_field,
+        },
+    }
+
+
+@pytest.fixture()
+def client(db_session: Session):
+    def _get_db_override():
+        try:
+            yield db_session
+        finally:
+            db_session.rollback()
+
+    app.dependency_overrides[get_db] = _get_db_override
+    with TestClient(app) as client:
+        yield client
+    app.dependency_overrides.clear()
