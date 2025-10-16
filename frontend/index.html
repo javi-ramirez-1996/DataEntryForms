@@ -3,6 +3,352 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Entry Forms - Collaboration</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #f5f7fb;
+        color: #1f2933;
+      }
+
+      header {
+        background: #1d4ed8;
+        color: white;
+        padding: 1rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 1.4rem;
+      }
+
+      .user-selector {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      main {
+        display: flex;
+        gap: 1.5rem;
+        padding: 1.5rem;
+      }
+
+      .form-panel, .chat-panel {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chat-panel {
+        flex: 1;
+        max-width: 420px;
+      }
+
+      .field {
+        margin-bottom: 1rem;
+      }
+
+      .field label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        max-height: 420px;
+        margin-bottom: 1rem;
+      }
+
+      .message {
+        padding: 0.75rem;
+        border-radius: 10px;
+        margin-bottom: 0.75rem;
+        background: #eef2ff;
+      }
+
+      .message .meta {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-bottom: 0.35rem;
+      }
+
+      .message.self {
+        background: #dcfce7;
+        align-self: flex-end;
+      }
+
+      form#message-form {
+        display: flex;
+        gap: 0.75rem;
+      }
+
+      form#message-form textarea {
+        flex: 1;
+        resize: none;
+        border: 1px solid #cbd5f5;
+        border-radius: 8px;
+        padding: 0.75rem;
+        font-family: inherit;
+      }
+
+      form#message-form button {
+        background: #1d4ed8;
+        color: white;
+        border: none;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      .notifications {
+        position: relative;
+        cursor: pointer;
+      }
+
+      .badge {
+        background: #ef4444;
+        color: white;
+        border-radius: 999px;
+        padding: 0.15rem 0.45rem;
+        font-size: 0.75rem;
+        position: absolute;
+        top: -6px;
+        right: -10px;
+      }
+
+      .notification-panel {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        width: 280px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+        padding: 1rem;
+        display: none;
+        z-index: 10;
+      }
+
+      .notification-panel.visible {
+        display: block;
+      }
+
+      .notification-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.85rem;
+      }
+
+      .notification-item:last-child {
+        border-bottom: none;
+      }
+
+      @media (max-width: 960px) {
+        main {
+          flex-direction: column;
+        }
+
+        .chat-panel {
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Data Entry Forms</h1>
+      <div class="notifications" id="notifications">
+        <span>Notifications</span>
+        <span class="badge" id="notification-badge" hidden>0</span>
+        <div class="notification-panel" id="notification-panel"></div>
+      </div>
+      <div class="user-selector">
+        <label for="user-select">Viewing as</label>
+        <select id="user-select">
+          <option value="1">Creator</option>
+          <option value="2">Assignee</option>
+          <option value="3">Observer</option>
+          <option value="4">Admin</option>
+        </select>
+      </div>
+    </header>
+    <main>
+      <section class="form-panel">
+        <h2>Form Response</h2>
+        <div class="field"><label>ID</label><span id="form-id">–</span></div>
+        <div class="field"><label>Status</label><span id="form-status">–</span></div>
+        <div class="field"><label>Assigned To</label><span id="form-assignee">–</span></div>
+        <div class="field"><label>Data</label><pre id="form-data">{}</pre></div>
+      </section>
+      <section class="chat-panel">
+        <h2>Discussion</h2>
+        <div class="chat-messages" id="chat-messages"></div>
+        <form id="message-form">
+          <textarea id="message-input" rows="3" placeholder="Add a comment..."></textarea>
+          <button type="submit">Send</button>
+        </form>
+      </section>
+    </main>
+    <script>
+      const origin = window.location.origin.replace(/\/$/, '');
+      const API_BASE = origin.includes(':8001') ? origin.replace(':8001', ':8000') : origin;
+      const FORM_RESPONSE_ID = 1;
+      const userSelect = document.getElementById('user-select');
+      const messageForm = document.getElementById('message-form');
+      const messageInput = document.getElementById('message-input');
+      const chatMessages = document.getElementById('chat-messages');
+      const notificationBadge = document.getElementById('notification-badge');
+      const notificationPanel = document.getElementById('notification-panel');
+      const notificationsToggle = document.getElementById('notifications');
+
+      function headers() {
+        return { 'Content-Type': 'application/json', 'X-User-Id': userSelect.value };
+      }
+
+      async function loadForm() {
+        try {
+          const response = await fetch(`${API_BASE}/form-responses/${FORM_RESPONSE_ID}`, {
+            headers: headers(),
+          });
+          if (!response.ok) {
+            throw new Error('Unable to fetch form response');
+          }
+          const data = await response.json();
+          document.getElementById('form-id').textContent = data.id;
+          document.getElementById('form-status').textContent = data.status;
+          document.getElementById('form-assignee').textContent = data.assigned_user_id ?? 'Unassigned';
+          document.getElementById('form-data').textContent = JSON.stringify(data.data, null, 2);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function loadMessages() {
+        try {
+          const response = await fetch(`${API_BASE}/form-responses/${FORM_RESPONSE_ID}/messages`, {
+            headers: headers(),
+          });
+          if (!response.ok) {
+            throw new Error('Unable to fetch messages');
+          }
+          const data = await response.json();
+          renderMessages(data);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function loadNotifications() {
+        try {
+          const response = await fetch(`${API_BASE}/notifications`, {
+            headers: headers(),
+          });
+          if (!response.ok) {
+            throw new Error('Unable to fetch notifications');
+          }
+          const data = await response.json();
+          renderNotifications(data);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      function renderMessages(messages) {
+        chatMessages.innerHTML = '';
+        messages.forEach((message) => {
+          const container = document.createElement('div');
+          container.classList.add('message');
+          if (Number(message.author_id) === Number(userSelect.value)) {
+            container.classList.add('self');
+          }
+          const meta = document.createElement('div');
+          meta.classList.add('meta');
+          const timestamp = new Date(message.created_at).toLocaleString();
+          meta.textContent = `User ${message.author_id} • ${timestamp}`;
+          const body = document.createElement('div');
+          body.textContent = message.body;
+          container.appendChild(meta);
+          container.appendChild(body);
+          chatMessages.appendChild(container);
+        });
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function renderNotifications(summary) {
+        if (summary.unread_count > 0) {
+          notificationBadge.hidden = false;
+          notificationBadge.textContent = summary.unread_count;
+        } else {
+          notificationBadge.hidden = true;
+        }
+        notificationPanel.innerHTML = '';
+        if (!summary.items.length) {
+          notificationPanel.innerHTML = '<p>No notifications.</p>';
+          return;
+        }
+        summary.items.forEach((item) => {
+          const div = document.createElement('div');
+          div.classList.add('notification-item');
+          div.textContent = `${item.type.toUpperCase()}: ${item.message}`;
+          notificationPanel.appendChild(div);
+        });
+      }
+
+      async function postMessage(body) {
+        const response = await fetch(`${API_BASE}/form-responses/${FORM_RESPONSE_ID}/messages`, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({ body }),
+        });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.detail || 'Failed to post message');
+        }
+        const data = await response.json();
+        messageInput.value = '';
+        await loadNotifications();
+        return data;
+      }
+
+      messageForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const value = messageInput.value.trim();
+        if (!value) return;
+        try {
+          await postMessage(value);
+        } catch (error) {
+          alert(error.message);
+        }
+      });
+
+      userSelect.addEventListener('change', async () => {
+        await loadForm();
+        await loadMessages();
+        await loadNotifications();
+      });
+
+      notificationsToggle.addEventListener('click', () => {
+        notificationPanel.classList.toggle('visible');
+      });
+
+      loadForm();
+      loadMessages();
+      loadNotifications();
+      setInterval(loadMessages, 5000);
+      setInterval(loadNotifications, 15000);
+    </script>
     <title>Data Entry Forms</title>
   </head>
   <body>
